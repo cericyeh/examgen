@@ -1,20 +1,26 @@
 from tqdm import tqdm
 import random
 import spacy
+import re
 import abc
 nlp = spacy.load('en_core_web_sm')
 BLANK = "_____"
+
+CIT_PATTERN = "\\[\\d+\\]"
 
 class SourceDocument:
     def __init__(self, f, total_lines=None):
         """
         Preprocesses the input text reader, running NLP analysis
         over each line (segment).  Entities are cached.
+        To avoid confusing the sentence splitter, Wikipedia-style references
+        are excised
         :param f: File input reader
         """
         self.segments = []
         self.all_sents = []
         for line in tqdm(f, total=total_lines):
+            line = re.sub(CIT_PATTERN, "", line.strip())
             segment = nlp(line)
             self.segments.append(segment)
             self.all_sents.extend(segment.sents)
@@ -30,7 +36,7 @@ class SourceDocument:
             if sentence.text in segment.text:
                 return segment
         return None
-    
+
     def sample_sentence(self):
         """
         Randomly chooses a sentence, returning the matching segment
@@ -63,14 +69,20 @@ class Question:
     def get_choices(self):
         pass
 
-    def __str__(self):
-        ret = "{}\n".format(self.question_txt)
+    def question(self, idx=None):
+        if idx is not None:
+            ret = "{}) {}\n".format(idx, self.question_txt)
+        else:
+            ret = "{}\n".format(self.question_txt)
         for idx, choice in enumerate(self.choices):
             ret += "\t{}: {}\n".format(idx, choice)
         return ret
 
-    def answer_key(self):
-        ret = "{}\n".format(self.question_txt)
+    def answer_key(self, idx=None):
+        if idx is not None:
+            ret = "{}) {}\n".format(idx, self.question_txt)
+        else:
+            ret = "{}\n".format(self.question_txt)
         golds = self.get_gold()
         ret += "ANSWER: {}\n".format(golds)
         for idx, choice in enumerate(self.choices):
