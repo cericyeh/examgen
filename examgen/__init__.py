@@ -7,6 +7,7 @@ nlp = spacy.load('en_core_web_sm')
 BLANK = "_____"
 
 CIT_PATTERN = "\\[\\d+\\]"
+CIT_PATTERN2 = "”\\d+"
 
 class SourceDocument:
     def __init__(self, f, total_lines=None):
@@ -17,13 +18,44 @@ class SourceDocument:
         are excised
         :param f: File input reader
         """
-        self.segments = []
+        self.segment_txts = []
         self.all_sents = []
-        for line in tqdm(f, total=total_lines):
-            line = re.sub(CIT_PATTERN, "", line.strip())
-            segment = nlp(line)
-            self.segments.append(segment)
-            self.all_sents.extend(segment.sents)
+        all_lines = f.readlines()
+        # Read in and repair broken lines.  Segments
+        # are delimited by empty lines
+        curr_seg = []
+        for line in tqdm(all_lines):
+            line = line.strip()
+            if len(line) == 0:
+                if len(curr_seg) > 0:
+                    self.segment_txts.append(curr_seg)
+                    curr_seg = []
+            else:
+                curr_seg.append(line)
+        if len(curr_seg) > 0:
+            self.segment_txts.append(curr_seg)
+        self.segments = []
+        for segment_lines in tqdm(self.segment_txts):
+            # Go through each segment, collapsing continuations together.
+            segment_txt = ""
+            is_continuation = False
+            for line in segment_lines:
+                line = line.strip()
+                if line.endswith("-"):
+                    segment_txt += line[:-1]
+                    is_continuation = True
+                else:
+                    if is_continuation:
+                        segment_txt += line
+                        is_continuation = False
+                    else:
+                        segment_txt += " " + line
+            segment_txt = re.sub(CIT_PATTERN, "", segment_txt.strip())
+            segment_txt = re.sub(CIT_PATTERN2, "”", segment_txt.strip())
+
+            segment_doc = nlp(segment_txt)
+            self.segments.append(segment_doc)
+            self.all_sents.extend(segment_doc.sents)
         # Grab all entities
         self.all_ents = []
         for segment in self.segments:
@@ -117,7 +149,7 @@ class MultipleChoiceQuestion(Question):
         return self.gold
 
     def __str__(self):
-        ret = "{} (choose one)\n".format(self.question_txt)
+        ret = "{}\nChoose one:\n".format(self.question_txt)
         for idx, choice in enumerate(self.choices):
             ret += "\t{}: {}\n".format(idx, choice)
         return ret

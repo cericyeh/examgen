@@ -8,7 +8,10 @@ Constructs questions using named entities.
 
 PERSON="PERSON"
 DATE="DATE"
-ORG="NORP"
+ORG="ORG"
+GPE="GPE"
+LOC="LOC"
+NORP="NORP"
 
 def sample(doc:SourceDocument, ent_type=PERSON, num_choices=5):
     """
