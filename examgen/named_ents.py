@@ -13,16 +13,40 @@ GPE="GPE"
 LOC="LOC"
 NORP="NORP"
 
-def sample(doc:SourceDocument, ent_type=PERSON, num_choices=5):
+def _valid_sentence(sentence):
+    txt = sentence.text.strip()
+    if txt[0] == '(' and txt[1] == ')':
+        return False
+    if txt[-1] == '?':
+        return False
+    has_verb = False
+    for tok in sentence:
+        if tok.tag_.startswith("V"):
+            has_verb = True
+    if not(has_verb):
+        return False
+    return True
+
+def sample(doc:SourceDocument, ent_type=PERSON, num_choices=5,
+           min_sent_tokens=5,
+           max_tries=100):
     """
     Given a sentence and the source document it was pulled from,
     samples a multiple choice question.  For multiword entities, uses
     the root word to identify the type.
     :param sentence:
     :param doc:
+    :param num_choices: Number of choices total
+    :param min_sent_tokens: Minimum length of sentence to use
     :return:
     """
-    sentence, segment = doc.sample_sentence()
+    sentence = None
+    num_tries = 0
+    while (sentence is None or len(sentence) < min_sent_tokens) and num_tries <= max_tries:
+        sentence, segment = doc.sample_sentence()
+        if not(_valid_sentence(sentence)):
+            sentence = None
+
     sent_ents = sentence.ents
     segment_ents = segment.ents
     valid_sent_ents = [x for x in sent_ents if x[-1].ent_type_ == ent_type]

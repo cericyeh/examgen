@@ -23,9 +23,8 @@ print("Reading {}".format(args.source_file))
 with open(args.source_file, 'r') as f:
     doc = SourceDocument(f)
 
-num_questions = 30
 questions = []
-for idx in range(num_questions):
+for idx in range(args.num_questions):
     question = None
     while question is None:
         ent_type = random.choice([PERSON, ORG, GPE, LOC, NORP])

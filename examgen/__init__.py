@@ -39,18 +39,25 @@ class SourceDocument:
             # Go through each segment, collapsing continuations together.
             segment_txt = ""
             is_continuation = False
+            # TODO: Optimize line continuation logic
             for line in segment_lines:
                 line = line.strip()
-                if line.endswith("-"):
-                    segment_txt += line[:-1]
-                    is_continuation = True
-                else:
-                    if is_continuation:
+                if is_continuation:
+                    if line.endswith("-"):
+                        segment_txt += line[:-1]
+                        is_continuation = True
+                    else:
                         segment_txt += line
                         is_continuation = False
+                else:
+                    if line.endswith("-"):
+                        segment_txt += " {}".format(line[:-1])
+                        is_continuation = True
                     else:
-                        segment_txt += " " + line
-            segment_txt = re.sub(CIT_PATTERN, "", segment_txt.strip())
+                        segment_txt += " {}".format(line)
+                        is_continuation = False
+            orig_segment_txt = segment_txt
+            segment_txt = re.sub(CIT_PATTERN, " ", segment_txt.strip())
             segment_txt = re.sub(CIT_PATTERN2, "”", segment_txt.strip())
 
             segment_doc = nlp(segment_txt)
