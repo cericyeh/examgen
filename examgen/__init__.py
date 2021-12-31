@@ -97,15 +97,15 @@ def read(fpath):
 
 class Question:
     @abc.abstractmethod
-    def get_gold(self):
+    def get_gold(self) -> str:
         pass
 
     @abc.abstractmethod
-    def get_question(self):
+    def get_question(self) -> str:
         pass
 
     @abc.abstractmethod
-    def get_choices(self):
+    def get_choices(self) -> list[str]:
         pass
 
     def question(self, idx=None):
