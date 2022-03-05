@@ -3,6 +3,7 @@ import random
 import spacy
 import re
 import abc
+
 nlp = spacy.load('en_core_web_sm')
 BLANK = "_____"
 
@@ -61,8 +62,19 @@ class SourceDocument:
             segment_txt = re.sub(CIT_PATTERN2, "”", segment_txt.strip())
 
             segment_doc = nlp(segment_txt)
+
             self.segments.append(segment_doc)
-            self.all_sents.extend(segment_doc.sents)
+            for sent in segment_doc.sents:
+                has_verb = False
+                for tok in sent:
+                    if tok.tag_.startswith("V"):
+                        has_verb = True
+                if not(has_verb):
+                    continue
+                if len(sent) <= 5:
+                    # Presume sentences of 5 tokens or less are not valid sentences.
+                    continue
+                self.all_sents.append(sent)
         # Grab all entities
         self.all_ents = []
         for segment in self.segments:
@@ -85,7 +97,7 @@ class SourceDocument:
         segment = self.find_segment(sentence)
         return sentence, segment
 
-def read(fpath):
+def read_doc(fpath):
     with open(fpath, 'r') as f:
         num_lines = 0
         for _ in f:

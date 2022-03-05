@@ -1,8 +1,9 @@
 import argparse
 import random
 
+import examgen
 from examgen import SourceDocument
-from examgen import named_ents
+from examgen import named_ents, copulas
 from examgen.named_ents import PERSON, ORG, GPE, LOC, NORP
 
 
@@ -43,11 +44,15 @@ for idx in range(args.num_questions):
     else:
         print("Warning, unable to sample new question!")
 
+random.shuffle(questions)
+
+print("Writing questions to {}".format(args.questions_file))
 with open(args.questions_file, 'w') as f:
     for idx, question in enumerate(questions):
         f.write(question.question(idx=idx + 1))
         f.write("\n\n")
 
+print("Writing answer key to {}".format(args.key_file))
 with open(args.key_file, 'w') as f:
     for idx, question in enumerate(questions):
         f.write(question.answer_key(idx=idx + 1))
